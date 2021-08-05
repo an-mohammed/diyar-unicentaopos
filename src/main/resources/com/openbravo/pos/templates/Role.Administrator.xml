@@ -124,7 +124,8 @@
             <class name="/com/openbravo/reports/inventory_diffdetail.bs"/>
             <class name="/com/openbravo/reports/inventory_listdetail.bs"/>
             <class name="/com/openbravo/reports/labels_barcode_sheet.bs"/>           
-            <class name="/com/openbravo/reports/labels_barcode_shelfedge.bs"/>            <class name="/com/openbravo/reports/productscatalog.bs"/>
+            <class name="/com/openbravo/reports/labels_barcode_shelfedge.bs"/>            
+            <class name="/com/openbravo/reports/productscatalog.bs"/>
             <class name="/com/openbravo/reports/labels_product.bs"/>
             <class name="/com/openbravo/reports/products.bs"/>
             <class name="/com/openbravo/reports/salecatalog.bs"/>
@@ -179,7 +180,7 @@
         <class name="/com/openbravo/reports/tools_missingdata.bs"/>
         <class name="/com/openbravo/reports/tools_newproducts.bs"/>
         <class name="/com/openbravo/reports/tools_updatedprices.bs"/>
-//        <class name="/com/openbravo/reports/tools_badprice.bs"/>
+        <class name="/com/openbravo/reports/tools_badprice.bs"/>
 
 <!-- EPM -->
 <class name="com.openbravo.pos.forms.MenuEmployees" />

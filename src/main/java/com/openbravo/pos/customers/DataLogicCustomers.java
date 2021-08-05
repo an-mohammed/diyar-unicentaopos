@@ -19,11 +19,14 @@
 
 package com.openbravo.pos.customers;
 
+import java.sql.SQLException;
+
 import com.openbravo.basic.BasicException;
 import com.openbravo.data.loader.*;
 import com.openbravo.format.Formats;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.BeanFactoryDataSingle;
+import com.openbravo.pos.sales.shared.AttenderSaleBagMain;
 import com.openbravo.pos.voucher.VoucherInfo;
 
 /**
@@ -184,6 +187,7 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
      * @return customer data
      */
         public SentenceList getCustomerList() {
+        	
         return new StaticSentence(s
             , new QBFBuilder("SELECT "
                     + "ID, TAXID, SEARCHKEY, NAME, "
@@ -229,7 +233,28 @@ public class DataLogicCustomers extends BeanFactoryDataSingle {
 //                            c.setDiscount(dr.getDouble(7));
             return c;
         }).find(id);
-    }        
+    }   
+    
+    public final CustomerInfo getCustomerName(String name) throws BasicException {
+    	if(s == null){
+    		s = AttenderSaleBagMain.createDBSession();
+    }
+    	return (CustomerInfo) new PreparedSentence(s
+                ,"SELECT " +
+                    "ID, TAXID, SEARCHKEY, NAME, POSTAL " +
+                 "FROM customers WHERE VISIBLE = " + s.DB.TRUE() + " " +
+                 "AND NAME = ?"
+    		, SerializerWriteString.INSTANCE , (DataRead dr) -> {
+                        CustomerInfo c = new CustomerInfo(dr.getString(1));
+                        c.setTaxid(dr.getString(2));
+                        c.setSearchkey(dr.getString(3));
+                        c.setName(dr.getString(4));
+                        c.setPcode(dr.getString(5));
+//                                c.setisVip(dr.getBoolean(6));
+//                                c.setDiscount(dr.getDouble(7));
+                return c;
+            }).find(name);
+        }     
        
     /**
      *

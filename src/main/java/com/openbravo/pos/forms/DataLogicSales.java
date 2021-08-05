@@ -1598,7 +1598,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
      */
     public final void saveTicket(final TicketInfo ticket, final String location) throws BasicException {
 
-        Transaction t;
+    	Transaction t;
         t = new Transaction(s) {
             @Override
             public Object transact() throws BasicException {
@@ -1707,15 +1707,18 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         , "INSERT INTO payments (ID, RECEIPT, PAYMENT, TOTAL, TRANSID, RETURNMSG, "
                         + "TENDERED, CARDNAME, VOUCHER, NOTES) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
                         , SerializerWriteParams.INSTANCE);
-
+             
+              
                 ticket.getPayments().forEach((p) -> {
+                	
                     if (p instanceof PaymentInfoMagcard) {
                         payments.addPayment(p.getName(),p.getTotal(), p.getPaid(),ticket.getReturnMessage(), p.getVoucher(), ((PaymentInfoMagcard) p).getLastFourDigits());
                     }else {
-                        payments.addPayment(p.getName(),p.getTotal(), p.getPaid(),ticket.getReturnMessage(), p.getVoucher(), null);
+                    	payments.addPayment(p.getName(),p.getTotal(), p.getPaid(),ticket.getReturnMessage(), p.getVoucher(), null);
                     }
 
                 });
+                
                 while (payments.getSize()>=1){
                     paymentinsert.exec(new DataParams() {
                         @Override
@@ -1724,12 +1727,15 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                             getTotal = payments.getPaidAmount(pName);
                             getTendered = payments.getTendered(pName);
                             getRetMsg = payments.getRtnMessage(pName);
-
-                            if (pName.contains("voucher")) {
+                            getVoucher="";//added Anwar - if other then vocaher and ccard we are doing empty
+                            if (pName.contains("voucher") 	) {
                                 getVoucher = payments.getVoucher(pName);
+                            } else if (pName.contains("ccard") //Anwar added or condition for card to reading voucher receipt
+                            		) {
+                                getVoucher = ticket.getTransactionID();
                             }
                             payments.removeFirst(pName);
-
+                          
                             setString(1, UUID.randomUUID().toString());
                             setString(2, ticket.getId());
                             setString(3, pName);
@@ -1741,6 +1747,7 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                             setString(9, getVoucher);
                             setString(10, payments.getNote(pName));
                             payments.removeFirst(pName);
+                            
                         }
                     });
 
@@ -1760,6 +1767,42 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                             }
                         });
                     }
+                    
+                    
+                    //Anwar
+                    //if payment done by card below logic execute.
+                    //System.out.println("ticket.getPayments().get(0).getVoucher()==========>"+ticket.getPayments().get(0).getVoucher());
+                   if(pName!=null && pName.equals("ccard")){
+                    if (ticket.getPayments()!=null 
+                    		&& ticket.getPayments().get(0)!=null 
+                    		//&& ticket.getPayments().get(0).getVoucher() != null 
+                    		//&& ticket.getPayments().get(0).getVoucher() != ""
+                    		&& ticket.getTransactionID() != null
+                    		&& ticket.getTransactionID() != ""
+                    		) {
+                    	 SentenceExec cardtransactionsinsert = new PreparedSentence(s
+                                 , "UPDATE cardtransactions SET PAYMENT_RECEIPT = ?, TRX_status = ?  "
+                                 + "WHERE PAYMENT_RECEIPT = '' AND TRX_STATUS = '' AND TRX_RECEIPT_NO=? "
+                                 , SerializerWriteParams.INSTANCE);
+                    	 
+                       // for (final TicketTaxInfo tickettax: ticket.getTaxes()) {
+                    	int count = cardtransactionsinsert.exec(new DataParams() {
+                                @Override
+                                public void writeValues() throws BasicException {
+                                    setString(1, ticket.getId());
+                                    setString(2, "completed");
+                                    setString(3, ticket.getTransactionID()/*ticket.getPayments().get(0).getVoucher()*/);
+                                }
+                            });
+                    	
+                    	System.out.println("Card receipt updated count:"+count);
+                    	if(count == 0){
+                    		 throw new BasicException("Receipt ID not found,Please use correct receipt ID. ");
+                    	}
+                    	// }
+                    }
+                    }//ccard if
+                   
                 }
 
                 SentenceExec taxlinesinsert = new PreparedSentence(s
@@ -1781,6 +1824,9 @@ public class DataLogicSales extends BeanFactoryDataSingle {
                         });
                     }
                 }
+                
+               
+                
                 return null;
             }
         };

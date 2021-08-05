@@ -213,8 +213,8 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
         m_sTicket = null;
         m_iLine = -1;
     }
-
-    void setTicket(String ticket, int line) {
+//Anwar did private to public
+    public void setTicket(String ticket, int line) {
         m_sTicket = ticket;
         m_iLine = line;
     }
@@ -398,7 +398,7 @@ public class TicketLineInfo implements SerializableWrite, SerializableRead, Seri
         attsetinstid = value;
     }
     public void setProductAttSetInstDesc(String value) {
-        if (value == null) {
+        if (value == null || value == "") {
             attributes.remove(value);
         } else {
             attributes.setProperty("product.attsetdesc", value);

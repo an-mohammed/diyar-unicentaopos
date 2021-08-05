@@ -19,8 +19,42 @@
 
 package com.openbravo.pos.sales;
 
-import bsh.EvalError;
-import bsh.Interpreter;
+import static java.awt.Window.getWindows;
+
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
+import javax.print.PrintService;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.BorderFactory;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alee.extended.time.ClockType;
 import com.alee.extended.time.WebClock;
 import com.alee.managers.notification.NotificationIcon;
@@ -33,8 +67,21 @@ import com.openbravo.data.gui.ListKeyed;
 import com.openbravo.data.gui.MessageInf;
 import com.openbravo.data.loader.SentenceList;
 import com.openbravo.pos.catalog.JCatalog;
-import com.openbravo.pos.customers.*;
-import com.openbravo.pos.forms.*;
+import com.openbravo.pos.customers.CustomerInfo;
+import com.openbravo.pos.customers.CustomerInfoExt;
+import com.openbravo.pos.customers.CustomerInfoGlobal;
+import com.openbravo.pos.customers.DataLogicCustomers;
+import com.openbravo.pos.customers.JCustomerFinder;
+import com.openbravo.pos.customers.JDialogNewCustomer;
+import com.openbravo.pos.forms.AppConfig;
+import com.openbravo.pos.forms.AppLocal;
+import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.forms.BeanFactoryApp;
+import com.openbravo.pos.forms.BeanFactoryException;
+import com.openbravo.pos.forms.DataLogicSales;
+import com.openbravo.pos.forms.DataLogicSystem;
+import com.openbravo.pos.forms.JPanelView;
+import com.openbravo.pos.forms.JRootApp;
 import com.openbravo.pos.inventory.ProductStock;
 import com.openbravo.pos.inventory.TaxCategoryInfo;
 import com.openbravo.pos.panels.JProductFinder;
@@ -48,34 +95,27 @@ import com.openbravo.pos.scale.ScaleException;
 import com.openbravo.pos.scripting.ScriptEngine;
 import com.openbravo.pos.scripting.ScriptException;
 import com.openbravo.pos.scripting.ScriptFactory;
-import com.openbravo.pos.ticket.*;
+import com.openbravo.pos.ticket.ProductInfoExt;
+import com.openbravo.pos.ticket.TaxInfo;
+import com.openbravo.pos.ticket.TicketInfo;
+import com.openbravo.pos.ticket.TicketLineInfo;
+import com.openbravo.pos.ticket.TicketTaxInfo;
 import com.openbravo.pos.util.AltEncrypter;
 import com.openbravo.pos.util.InactivityListener;
 import com.openbravo.pos.util.JRPrinterAWT300;
 import com.openbravo.pos.util.ReportUtils;
+
+import bsh.EvalError;
+import bsh.Interpreter;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
 import net.sf.jasperreports.engine.data.JRMapArrayDataSource;
 import net.sf.jasperreports.engine.design.JasperDesign;
 import net.sf.jasperreports.engine.xml.JRXmlLoader;
-
-import javax.print.PrintService;
-import javax.swing.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.FocusEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.util.*;
-
-import static java.awt.Window.getWindows;
 
 
 /**
@@ -158,6 +198,10 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
   private Integer oCount = 0;
   private Boolean pinOK;
 
+  public static ProductInfoExt attenderSaleProduct;
+  public static List<ProductInfoExt> attenderSaleProductList;
+  public static TaxInfo attenderTaxinfo;
+  public static CustomerInfo attenderCustomerInfo;
 
   /**
    * Creates new form JTicketView
@@ -167,6 +211,12 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
     initComponents();
   }
 
+  public JPanelTicket(String code,String name) {
+
+	  System.out.println("Code:"+code);
+	  sincProductByCode(code, name);
+
+  	}
   /**
    * @param app
    * @throws BeanFactoryException
@@ -962,6 +1012,46 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
     }
   }
 
+  //Anwar
+	public void sincProductByCode(String sCode,String name) {
+
+		try {
+			DataLogicSales ds = new DataLogicSales();
+			ProductInfoExt oProduct = ds.getProductInfoByCode(sCode);
+
+			if (oProduct == null) {
+				System.out.println("Product not found.");
+			} else {
+				attenderSaleProduct = oProduct;
+				//incProduct(oProduct);
+				TaxesLogic attenderSalesTax = new TaxesLogic(ds.getTaxList().list());
+				if(oProduct != null && attenderSalesTax != null){
+					attenderTaxinfo = attenderSalesTax.getTaxInfo(oProduct.getTaxCategoryID(),null);//TODO for customer
+					
+					// custInfo = m_dlSales.getCustomerInfo(cID);
+					if(name != null){
+					DataLogicCustomers  attenderdlCustomers = new DataLogicCustomers();
+					attenderCustomerInfo = attenderdlCustomers.getCustomerName(name);
+					}
+				}
+			}
+		} catch (BasicException eData) {
+			//stateToZero();
+			//new MessageInf(eData).show(this);
+		}
+		//return attenderSaleProduct;
+	}
+	
+	public ProductInfoExt attenderSaleProduct() {
+		return attenderSaleProduct;
+	}
+	public TaxInfo attenderSalesTax() {
+		return attenderTaxinfo;
+	}
+	public CustomerInfo attenderCustomerInfo() {
+		return attenderCustomerInfo;
+	}
+	//End Anwar
   private void incProductByCodePrice(String sCode, double dPriceSell) {
 
     try {
@@ -1829,20 +1919,22 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
             ticket.setDate(new Date());
 
             if (executeEvent(ticket, ticketext, "ticket.save") == null) {
-
+            	boolean flag = true;
               try {
                 dlSales.saveTicket(ticket, m_App.getInventoryLocation());
                 m_config.setProperty("lastticket.number", Integer.toString(ticket.getTicketId()));
                 m_config.setProperty("lastticket.type", Integer.toString(ticket.getTicketType()));
                 m_config.save();
-
               } catch (BasicException eData) {
                 MessageInf msg = new MessageInf(MessageInf.SGN_NOTICE, AppLocal.getIntString("message.nosaveticket"), eData);
                 msg.show(this);
+                flag = false;
               } catch (IOException ex) {
                 log.error(ex.getMessage());
+                flag = false;
               }
-
+              
+              if(flag){
               executeEvent(ticket, ticketext, "ticket.close",
                       new ScriptArg("print", paymentdialog.isPrintSelected()));
 
@@ -1852,7 +1944,7 @@ public abstract class JPanelTicket extends JPanel implements JPanelView, BeanFac
               Notify(AppLocal.getIntString("notify.printing"));
 
               resultok = true;
-
+              }
               if ("restaurant".equals(m_App.getProperties()
                       .getProperty("machine.ticketsbag")) && !ticket.getOldTicket()) {
                 /* Deliberately Explicit to allow for reassignments - future

@@ -20,6 +20,8 @@
 package com.openbravo.data.loader;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.pos.sales.shared.AttenderSaleBagMain;
+
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.PreparedStatement;
@@ -182,9 +184,12 @@ public class PreparedSentence extends JDBCSentence {
 
         try {
             log.debug("Executing prepared SQL: {}", m_sentence);
-
-            m_Stmt = m_s.getConnection().prepareStatement(m_sentence);
- 
+			//Anwar
+            if (m_s == null) {
+				m_s = AttenderSaleBagMain.createDBSession();
+			}
+			
+			m_Stmt = m_s.getConnection().prepareStatement(m_sentence);
             if (m_SerWrite != null) {
                 // si m_SerWrite fuera null deberiamos cascar.
                 PreparedSentencePars preparedSentencePars = new PreparedSentencePars(m_Stmt);

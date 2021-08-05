@@ -129,7 +129,9 @@ public class Payments {
      * @return
      */
     public String getRtnMessage(String pName){
+    	if(rtnMessage.get(pName) !=null){
         return (rtnMessage.get(pName).toString());
+    	}return "";
     }
 
     public String getVoucher(String pName){

@@ -46,13 +46,17 @@ import javax.swing.SwingUtilities;
  */
 public class JTicketsBagShared extends JTicketsBag {
     
-    private String m_sCurrentTicket = null;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = -126771897565788736L;
+	private String m_sCurrentTicket = null;
     private DataLogicReceipts dlReceipts = null;
     private DataLogicSales dlSales = null;  
     private final DataLogicSystem dlSystem;    
     private Boolean showList;
    
-    
+   
     /** Creates new form JTicketsBagShared
      * @param app
      * @param panelticket */
@@ -70,7 +74,10 @@ public class JTicketsBagShared extends JTicketsBag {
         
     }
     
-    /**
+   
+
+
+	/**
      *
      */
     @Override
@@ -231,6 +238,21 @@ public class JTicketsBagShared extends JTicketsBag {
  
     }
     
+    //Anwar
+   
+        
+    public void newTicketAttender() {      
+        TicketInfo ticket = new TicketInfo();    
+        m_sCurrentTicket = UUID.randomUUID().toString();
+        m_panelticket.setActiveTicket(ticket, null);      
+
+        saveCurrentTicket();
+        
+        // updateCount();  
+ 
+    }
+ //end Anwar
+ 
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is

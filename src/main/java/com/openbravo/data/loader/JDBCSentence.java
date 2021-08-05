@@ -20,6 +20,9 @@
 package com.openbravo.data.loader;
 
 import com.openbravo.basic.BasicException;
+
+import java.io.IOException;
+import java.io.PrintStream;
 import java.sql.*;
 
 /**
@@ -145,8 +148,10 @@ public abstract class JDBCSentence extends BaseSentence {
              */
             public byte[] getBytes(int columnIndex) throws BasicException {
             try {
+            
+                    
                 return m_rs.getBytes(columnIndex);
-            } catch (SQLException eSQL) {
+            } catch (SQLException  eSQL) {
                 throw new BasicException(eSQL);
             }
         }

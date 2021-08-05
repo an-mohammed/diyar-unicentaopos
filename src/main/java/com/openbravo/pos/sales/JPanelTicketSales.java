@@ -22,6 +22,7 @@ import com.openbravo.basic.BasicException;
 import com.openbravo.pos.catalog.CatalogSelector;
 import com.openbravo.pos.catalog.JCatalog;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.sales.shared.JTicketsBagShared;
 import com.openbravo.pos.ticket.ProductInfoExt;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -98,6 +99,13 @@ public class JPanelTicketSales extends JPanelTicket {
         return JTicketsBag.createTicketsBag(m_App.getProperties().getProperty("machine.ticketsbag"), m_App, this);
     }
     
+    //Anwar
+    public void getJTicketsBagAttender() {
+    	JTicketsBag.createTicketsBag("standard", m_App, this);
+    	new JTicketsBagShared(m_App, m_panelticket).newTicketAttender();
+        
+    }
+    //end Anwar
     /**
      *
      * @throws BasicException

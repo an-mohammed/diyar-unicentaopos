@@ -64,6 +64,15 @@ public class PaymentInfoTicket extends PaymentInfo implements SerializableRead  
         m_sVoucher = sVoucher;
         m_sVoucherNumber = sVoucher;
     }    
+  
+   public PaymentInfoTicket(double dTicket, String sName, String sVoucher, String transactionID,String cardName) {
+        m_sName = sName;
+        m_dTicket = dTicket;
+        m_sVoucher = sVoucher;
+        m_sVoucherNumber = sVoucher;
+        m_transactionID = transactionID;
+        m_dCardName = cardName;
+    }
     
     public PaymentInfoTicket() {
         m_sName = null;

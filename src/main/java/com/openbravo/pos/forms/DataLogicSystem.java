@@ -27,6 +27,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -546,12 +547,34 @@ public class DataLogicSystem extends BeanFactoryDataSingle {
         
         resource = resourcescache.get(name);
         
+       // System.out.println("if resource");
         if (resource == null) {       
             try {
+         //       System.out.println("in side if resource");
+if(!name.equals("Window.Title")){
+	System.out.println("name:"+name);
+}
                 resource = (byte[]) m_resourcebytes.find(name);
+                
                 resourcescache.put(name, resource);
+               
+            System.out.println("AP Resource Blob Data for :"+name+" and Resource is :"+resource+" \n");
+              if(resource != null){
+            	 PrintStream output = null;
+            	  output = System.out;
+                     
+            	 output.write(resource);
+                    
+                   // output.flush();
+                   // output.close();
+              }
+              System.out.println("");
+                
             } catch (BasicException e) {
                 resource = null;
+            }
+           catch ( IOException e){
+            	e.printStackTrace();
             }
         }
         

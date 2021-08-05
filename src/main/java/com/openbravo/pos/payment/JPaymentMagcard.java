@@ -19,11 +19,16 @@
 
 package com.openbravo.pos.payment;
 
+import com.openbravo.format.Formats;
 import com.openbravo.pos.customers.CustomerInfoExt;
 import com.openbravo.pos.forms.AppLocal;
 import com.openbravo.pos.forms.AppView;
+import com.openbravo.pos.util.RoundUtils;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  *
@@ -31,31 +36,37 @@ import java.awt.Component;
  */
 public class JPaymentMagcard extends javax.swing.JPanel implements JPaymentInterface {
     
-    private PaymentPanel m_cardpanel;
-    private final PaymentGateway m_paymentgateway;
-    private final JPaymentNotifier m_notifier;
-    private String transaction;
+	  
+    private JPaymentNotifier m_notifier;
+
+    private double m_dPaid;
+    private double m_dTotal;
+    private Boolean priceWith00;
+    private String valueVocher;
     
-    /** Creates new form JPaymentMagcard
-     * @param app
+    /** Creates new form JPaymentCash
      * @param notifier */
     public JPaymentMagcard(AppView app, JPaymentNotifier notifier) {
         
-        initComponents();   
-        
         m_notifier = notifier;
         
-        m_paymentgateway = PaymentGatewayFac.getPaymentGateway(app.getProperties());
+        initComponents();  
         
-        if (m_paymentgateway == null) {
-            jlblMessage.setText(AppLocal.getIntString("message.nopaymentgateway"));            
-        } else {           
-            // Se van a poder efectuar pagos con tarjeta
-            m_cardpanel = PaymentPanelFac.getPaymentPanel(app.getProperties().getProperty("payment.magcardreader"), notifier);
-            add(m_cardpanel.getComponent(), BorderLayout.CENTER);
-            jlblMessage.setText(null);
-            // jlblMessage.setText(AppLocal.getIntString("message.nocardreader"));
+        m_jTendered.addPropertyChangeListener("Edition", new RecalculateState());
+        m_jTendered.addEditorKeys(m_jKeys);
+        
+ /* added JDL 11.05.13        
+        AppConfig m_config =  new AppConfig(new File((System.getProperty("user.home")), AppLocal.APP_ID + ".properties"));        
+        m_config.load();        
+        priceWith00 =("true".equals(m_config.getProperty("till.pricewith00")));
+        if (priceWith00) {
+            // use '00' instead of '.'
+            m_jKeys.dotIs00(true);
         }
+        m_config=null;
+*/ 
+        
+      //  m_jKeys.dotIs00(true);
     }
     
     /**
@@ -65,16 +76,16 @@ public class JPaymentMagcard extends javax.swing.JPanel implements JPaymentInter
      * @param transID
      */
     @Override
-    public void activate(CustomerInfoExt customerext, double dTotal, String transID) {   
-        this.transaction = transID;
-
-        if (m_cardpanel == null) {
-            jlblMessage.setText(AppLocal.getIntString("message.nopaymentgateway"));  
-            m_notifier.setStatus(false, false);
-        } else {
-            jlblMessage.setText(null);
-            m_cardpanel.activate(transaction, dTotal); 
-        }
+    public void activate(CustomerInfoExt customerext, double dTotal, String transID) {
+        
+        m_dTotal = dTotal;
+        
+        
+        m_jTendered.reset();
+        m_jTendered.activate();
+        
+        printState();
+        
     }
 
     /**
@@ -83,19 +94,15 @@ public class JPaymentMagcard extends javax.swing.JPanel implements JPaymentInter
      */
     @Override
     public PaymentInfo executePayment() {
-        
-        jlblMessage.setText(null);
-
-        PaymentInfoMagcard payinfo = m_cardpanel.getPaymentInfoMagcard();
-
-        m_paymentgateway.execute(payinfo);
-        if (payinfo.isPaymentOK()) {
-            return payinfo;
-        } else {
-            jlblMessage.setText(payinfo.getMessage());
-            return null;
-        }
-    }  
+    	
+     //   return new PaymentInfoTicket(m_dPaid, "magcard");    
+       // return new  PaymentInfoTicket(m_dPaid, "ccard", valueVocher);
+    	//return new  PaymentInfoTicket(m_dPaid, "ccard", valueVocher, valueVocher, "debit"); 
+    	 PaymentInfoMagcard payinfo = new  PaymentInfoMagcard("ccard", valueVocher, "***",valueVocher, m_dPaid);
+    	 payinfo.paymentOK("***", valueVocher, "");
+    	 return payinfo;
+    			 
+    }
 
     /**
      *
@@ -105,14 +112,37 @@ public class JPaymentMagcard extends javax.swing.JPanel implements JPaymentInter
     public Component getComponent() {
         return this;
     }
-    
-    /**
-     *
-     * @param transid
-     */
-    public void setTransaction(String transid){
-        transaction = transid;
+
+    private void printState() {
+        
+        String value = m_jTendered.getText();
+       /* if (value == null) {
+            m_dPaid = m_dTotal;
+        } else {
+            m_dPaid = value;
+        } */
+        if (value == null) {
+            m_dPaid = m_dTotal;
+            m_jMoneyEuros.setText(Formats.STRING.formatValue(""));
+        } else {
+        	 m_jMoneyEuros.setText(Formats.STRING.formatValue(value));
+        	 valueVocher = value;
+        }
+       
+        
+        int iCompare = RoundUtils.compare(m_dPaid, m_dTotal);
+        
+        // if iCompare > 0 then the payment is not valid
+       // m_notifier.setStatus(m_dPaid > 0.0 && iCompare <= 0, iCompare == 0);
+        m_notifier.setStatus(true,true);
     }
+    
+    private class RecalculateState implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            printState();
+        }
+    }     
     
     /** This method is called from within the constructor to
      * initialize the form.
@@ -122,41 +152,65 @@ public class JPaymentMagcard extends javax.swing.JPanel implements JPaymentInter
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
+        jPanel2 = new javax.swing.JPanel();
         jPanel1 = new javax.swing.JPanel();
-        jlblMessage = new javax.swing.JLabel();
+        m_jKeys = new com.openbravo.editor.JEditorKeys();
+        jPanel3 = new javax.swing.JPanel();
+        m_jTendered = new com.openbravo.editor.JEditorStringNumber();
+        jPanel4 = new javax.swing.JPanel();
+        jLabel8 = new javax.swing.JLabel();
+        m_jMoneyEuros = new javax.swing.JLabel();
 
-        setMinimumSize(new java.awt.Dimension(300, 40));
-        setPreferredSize(new java.awt.Dimension(500, 50));
+        setLayout(new java.awt.BorderLayout());
 
-        jPanel1.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jPanel1.setMinimumSize(new java.awt.Dimension(290, 35));
-        jPanel1.setPreferredSize(new java.awt.Dimension(500, 45));
+        jPanel2.setLayout(new java.awt.BorderLayout());
 
-        jlblMessage.setFont(new java.awt.Font("Arial", 0, 18)); // NOI18N
-        jlblMessage.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jPanel1.setLayout(new javax.swing.BoxLayout(jPanel1, javax.swing.BoxLayout.Y_AXIS));
+        jPanel1.add(m_jKeys);
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jlblMessage, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jlblMessage, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addContainerGap())
-        );
+        jPanel3.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        jPanel3.setFont(new java.awt.Font("Tahoma", 0, 12)); // NOI18N
+        jPanel3.setLayout(new java.awt.BorderLayout());
 
-        add(jPanel1);
+        m_jTendered.setFont(new java.awt.Font("Arial", 1, 16)); // NOI18N
+        jPanel3.add(m_jTendered, java.awt.BorderLayout.CENTER);
+
+        jPanel1.add(jPanel3);
+
+        jPanel2.add(jPanel1, java.awt.BorderLayout.NORTH);
+
+        add(jPanel2, java.awt.BorderLayout.EAST);
+
+        jPanel4.setLayout(null);
+
+        jLabel8.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        jLabel8.setText("Receipt"); // NOI18N
+        jLabel8.setPreferredSize(new java.awt.Dimension(100, 30));
+        jPanel4.add(jLabel8);
+        jLabel8.setBounds(10, 4, 100, 30);
+
+        m_jMoneyEuros.setBackground(new java.awt.Color(255, 255, 255));
+        m_jMoneyEuros.setFont(new java.awt.Font("Arial", 1, 18)); // NOI18N
+        m_jMoneyEuros.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        m_jMoneyEuros.setBorder(javax.swing.BorderFactory.createCompoundBorder(javax.swing.BorderFactory.createLineBorder(javax.swing.UIManager.getDefaults().getColor("Button.darkShadow")), javax.swing.BorderFactory.createEmptyBorder(1, 4, 1, 4)));
+        m_jMoneyEuros.setOpaque(true);
+        m_jMoneyEuros.setPreferredSize(new java.awt.Dimension(180, 30));
+        jPanel4.add(m_jMoneyEuros);
+        m_jMoneyEuros.setBounds(120, 4, 180, 30);
+
+        add(jPanel4, java.awt.BorderLayout.CENTER);
     }// </editor-fold>//GEN-END:initComponents
     
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JLabel jlblMessage;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private com.openbravo.editor.JEditorKeys m_jKeys;
+    private javax.swing.JLabel m_jMoneyEuros;
+    private com.openbravo.editor.JEditorStringNumber m_jTendered;
     // End of variables declaration//GEN-END:variables
     
 }

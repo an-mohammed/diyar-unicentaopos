@@ -33,6 +33,19 @@ mvn clean assemble
 java -jar ./target/unicentaopos
 ```
 
+## this release contain Attender inserting the product from out side / service 
 
+## below class changes done for this release 
+DataLogicCustomers.java
+DataLogicSales
+DataLogicSystem
+Payments.java
+JPaymentMagcard
+PaymentInfoTicket.java
 
+AttenderSaleBagMain.java -- new file
+JPanelTicket.java
+JPanelTicketSales.java
+TicketLineInfo.java	
+	
 

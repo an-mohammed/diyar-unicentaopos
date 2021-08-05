@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;unicentaopos/src/main/java/com/openbravo/pos/payment/JpaymentMarcard.java_original.txt&apos; to &apos;Original_JpaymentMarcard.java&apos;" description="Rename resource &apos;JpaymentMarcard.java_original.txt&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="src/main/java/com/openbravo/pos/payment/JpaymentMarcard.java_original.txt" name="Original_JpaymentMarcard.java" stamp="1623246579743" updateReferences="true"/>
+</session>

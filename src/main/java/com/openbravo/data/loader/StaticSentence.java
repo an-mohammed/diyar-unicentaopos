@@ -20,6 +20,8 @@
 package com.openbravo.data.loader;
 
 import com.openbravo.basic.BasicException;
+import com.openbravo.pos.sales.shared.AttenderSaleBagMain;
+
 import lombok.extern.slf4j.Slf4j;
 
 import java.sql.SQLException;
@@ -112,9 +114,15 @@ public class StaticSentence extends JDBCSentence {
         closeExec();
 
         try {
-            m_Stmt = m_s.getConnection().createStatement();
+        	//Anwar added for attender process
+        	if(m_s  == null){
+        			m_s = AttenderSaleBagMain.createDBSession();
+    			//m_s = new Session("jdbc:mysql://localhost:3306/unicentaoposmaster?useSSL=false&useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT", "root123","root@123");
+        	}//End
 
-            String sentence = m_sentence.getSQL(m_SerWrite, params);
+    		m_Stmt = m_s.getConnection().createStatement();
+
+        	String sentence = m_sentence.getSQL(m_SerWrite, params);
 
            log.debug("Executing static SQL: {}", sentence);
 
